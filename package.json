@@ -1,7 +1,7 @@
 {
   "name": "vue-bypass",
   "version": "1.0.0",
-  "description": "Bypass Cloudflare and get MyVue showtimes JSON",
+  "description": "Cloudflare bypass scraper for MyVue showings API",
   "main": "bypass.js",
   "type": "commonjs",
   "scripts": {
@@ -11,5 +11,8 @@
   "dependencies": {
     "playwright": "^1.45.0",
     "playwright-extra": "^4.3.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
