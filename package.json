@@ -10,8 +10,7 @@
   },
   "dependencies": {
     "playwright": "^1.45.0",
-    "playwright-extra": "^4.3.4",
-    "playwright-extra-plugin-stealth": "^2.7.0"
+    "playwright-extra": "^4.3.4"
   },
   "engines": {
     "node": ">=18.0.0"
