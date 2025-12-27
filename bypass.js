@@ -1,16 +1,10 @@
-const playwright = require("playwright-extra");
-
-// ----------------------
-// 🔐 PUT YOUR TOKEN HERE
-// ----------------------
-const microservicesToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxYmRjYzIyMS0yNTI0LTRlMjEtYjU3ZS1mNmZlMzk2ZTE4MjQiLCJDb3VudHJ5IjoiVUsiLCJBdXRoIjoiMyIsIlNob3dpbmciOiIzIiwiQm9va2luZyI6IjMiLCJQYXltZW50IjoiMyIsIlBhcnRuZXIiOiIzIiwiTG95YWx0eSI6IjMiLCJDYW1wYWlnblRyYWNraW5nQ29kZSI6IiIsIkNsaWVudE5hbWUiOiIiLCJuYmYiOjE3NjY4MTgxMjcsImV4cCI6MTc2Njg2MTMyNywiaXNzIjoiUHJvZCJ9.OMKtC8wCXNih9iYJS9_jlxVasZPLJUH-2C3T6zg51Gg"; // microservicesToken
-// ----------------------
+const playwright = require("playwright");
 
 const filmId = process.argv[2] || "HO00020882";
 const API = `https://www.myvue.com/api/microservice/showings/cinemas?filmId=${filmId}`;
 
 (async () => {
-  console.log(`🎬 Fetching ${filmId}...`);
+  console.log(`🎬 Cloudflare Challenge Handler for film: ${filmId}`);
 
   const browser = await playwright.chromium.launch({
     headless: true,
@@ -18,69 +12,66 @@ const API = `https://www.myvue.com/api/microservice/showings/cinemas?filmId=${fi
       "--no-sandbox",
       "--disable-setuid-sandbox",
       "--disable-dev-shm-usage",
-      "--disable-gpu",
-      "--disable-web-security",
-      "--disable-features=IsolateOrigins,site-per-process",
-      "--force-webrtc-ip-handling-policy=disable_non_proxied_udp",
-      "--lang=en-GB,en",
-      "--window-size=1366,768"
+      "--disable-blink-features=AutomationControlled"
     ]
   });
 
   const context = await browser.newContext({
-    // 📌 UK Persona Spoofing
-    locale: "en-GB",
-    timezoneId: "Europe/London",
-    geolocation: { latitude: 51.5072, longitude: -0.1276 },
-    permissions: ["geolocation"],
     userAgent:
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118 Safari/537.36",
-    viewport: { width: 1366, height: 768 }
+    locale: "en-GB"
   });
 
   const page = await context.newPage();
 
-  // 🧠 Anti-detection patches
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, "webdriver", { get: () => false });
-    Object.defineProperty(navigator, "languages", { get: () => ["en-GB","en"] });
-    Object.defineProperty(navigator, "platform", { get: () => "Win32" });
-    Object.defineProperty(navigator, "language", { get: () => "en-GB" });
-    Object.defineProperty(navigator, "deviceMemory", { get: () => 8 });
-  });
-
-  // 🍪 Warmup visit
-  console.log("🍪 Initializing session...");
+  console.log("⚠️ Visiting site to trigger challenge...");
   await page.goto("https://www.myvue.com/", { waitUntil: "domcontentloaded" });
-  await page.waitForTimeout(2000);
 
-  // 🌐 Request with AUTH
-  console.log("📡 Fetching API...");
-  const result = await page.evaluate(async ({ url, token }) => {
-    const res = await fetch(url, {
+  // Detect challenge loop
+  let solved = false;
+  for (let i = 0; i < 10; i++) {
+    const content = await page.content();
+
+    if (content.includes("cf-")) {
+      console.log(`🔄 Attempt ${i+1}/10: Waiting for Cloudflare JS...`);
+      await page.waitForTimeout(4000);
+    } else {
+      solved = true;
+      break;
+    }
+  }
+
+  if (!solved) {
+    console.log("❌ Cloudflare did not solve automatically.");
+  }
+
+  const cookies = await context.cookies();
+  const cf = cookies.find(c => c.name === "cf_clearance");
+
+  if (!cf) {
+    console.log("❌ Could not obtain cf_clearance cookie.");
+  } else {
+    console.log(`🎉 GOT CLEARANCE COOKIE: ${cf.value.slice(0,20)}...`);
+  }
+
+  console.log("📡 Fetching API *AFTER* clearance...");
+
+  const result = await page.evaluate(async (url) => {
+    const r = await fetch(url, {
       headers: {
-        "Authorization": `Bearer ${token}`,
-        "Accept": "application/json, text/plain, */*",
-        "Content-Type": "application/json;charset=UTF-8",
-        "Origin": "https://www.myvue.com",
-        "Referer": "https://www.myvue.com/",
-        "Accept-Language": "en-GB,en-US;q=0.9",
+        "Accept": "application/json",
         "X-Requested-With": "XMLHttpRequest"
-      },
-      credentials: "include"
+      }
     });
+    return await r.text();
+  }, API);
 
-    // return full text
-    return await res.text();
-  }, { url: API, token: microservicesToken });
-
-  console.log("\n🧪 RAW RESPONSE PREVIEW:\n", result.slice(0, 500), "\n");
+  console.log("\n🧪 PREVIEW:\n", result.slice(0, 300));
 
   try {
-    const data = JSON.parse(result);
-    console.log("🎉 FINAL JSON RESULT:\n", data);
+    console.log("\n🎉 JSON DATA\n", JSON.parse(result));
   } catch {
-    console.log("❌ Still blocked or invalid token.\n👉 Try refreshing token or let me add auto-refresh.");
+    console.log("\n❌ Still HTML / blocked (BUT we got CF cookie: progress!)");
   }
 
   await browser.close();
