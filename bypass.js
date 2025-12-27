@@ -1,6 +1,6 @@
 const playwright = require("playwright-extra");
 
-// ✨ Put your cookies here
+// ▼▼ Paste latest tokens here ▼▼
 const cookies = [
   {
     name: "microservicesToken",
@@ -28,7 +28,7 @@ const API = `https://www.myvue.com/api/microservice/showings/cinemas?filmId=${fi
 
   const browser = await playwright.chromium.launch({
     headless: true,
-    args: ["--no-sandbox"]
+    args: ["--no-sandbox","--disable-setuid-sandbox"]
   });
 
   const context = await browser.newContext({
@@ -37,31 +37,32 @@ const API = `https://www.myvue.com/api/microservice/showings/cinemas?filmId=${fi
     locale: "en-GB"
   });
 
-  // Add cookies to session
   await context.addCookies(cookies);
-
   const page = await context.newPage();
 
-  // Direct API call with AUTHORIZATION HEADER
-  const response = await page.evaluate(async (url, token) => {
-    const res = await fetch(url, {
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Accept": "application/json",
-        "X-Requested-With": "XMLHttpRequest"
-      }
-    });
-    return await res.text();
-  }, API, cookies[0].value);
+  console.log("📡 Fetching API via XHR + Auth...");
+  const response = await page.evaluate(
+    async ({ url, token }) => {
+      const res = await fetch(url, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Accept": "application/json",
+          "X-Requested-With": "XMLHttpRequest"
+        }
+      });
+      return await res.text();
+    },
+    { url: API, token: cookies[0].value }
+  );
 
   console.log("\n=== RAW RESPONSE ===\n");
-  console.log(response.slice(0, 500));
+  console.log(response.slice(0, 300));
 
   try {
     const data = JSON.parse(response);
-    console.log("\n🎉 JSON Data:\n", data);
+    console.log("\n🎉 Parsed JSON:\n", data);
   } catch {
-    console.log("\n❌ Still got blocked or invalid auth.\nCheck if token expired.");
+    console.log("\n❌ Token expired or invalid. Update cookie.");
   }
 
   await browser.close();
