@@ -3,7 +3,7 @@ const playwright = require("playwright-extra");
 // ----------------------
 // 🔐 PUT YOUR TOKEN HERE
 // ----------------------
-const microservicesToken = "PUT_YOUR_TOKEN_HERE"; // microservicesToken
+const microservicesToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxYmRjYzIyMS0yNTI0LTRlMjEtYjU3ZS1mNmZlMzk2ZTE4MjQiLCJDb3VudHJ5IjoiVUsiLCJBdXRoIjoiMyIsIlNob3dpbmciOiIzIiwiQm9va2luZyI6IjMiLCJQYXltZW50IjoiMyIsIlBhcnRuZXIiOiIzIiwiTG95YWx0eSI6IjMiLCJDYW1wYWlnblRyYWNraW5nQ29kZSI6IiIsIkNsaWVudE5hbWUiOiIiLCJuYmYiOjE3NjY4MTgxMjcsImV4cCI6MTc2Njg2MTMyNywiaXNzIjoiUHJvZCJ9.OMKtC8wCXNih9iYJS9_jlxVasZPLJUH-2C3T6zg51Gg"; // microservicesToken
 // ----------------------
 
 const filmId = process.argv[2] || "HO00020882";
