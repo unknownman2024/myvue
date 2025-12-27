@@ -1,0 +1,28 @@
+name: Run Scraper
+
+on:
+  workflow_dispatch:      # Manual run button
+  schedule:
+    - cron: "0 */6 * * *"  # हर 6 घंटे में ऑटो-रन
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install deps
+        run: npm install
+
+      - name: Install browser
+        run: npx playwright install chromium
+
+      - name: Run script
+        run: npm start
