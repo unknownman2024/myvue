@@ -1,5 +1,7 @@
+// Node 18+
+// Cloudflare Bypass for MyVue API
+
 const playwright = require("playwright-extra");
-// built-in stealth plugin (updated way)
 const stealth = require("playwright-extra/dist/stealth")();
 playwright.use(stealth);
 
@@ -7,33 +9,46 @@ const filmId = process.argv[2] || "HO00020882";
 const TARGET_URL = `https://www.myvue.com/api/microservice/showings/cinemas?filmId=${filmId}`;
 
 (async () => {
+  console.log(`🎯 Fetching data for ${filmId}...`);
+
   const browser = await playwright.chromium.launch({
     headless: true,
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
-      "--disable-blink-features=AutomationControlled"
+      "--disable-blink-features=AutomationControlled",
+      "--disable-dev-shm-usage",
+      "--disable-gpu",
+      "--single-process",
+      "--no-zygote",
+      "--no-first-run"
     ]
   });
 
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  // Preload homepage to get CF cookies
+  // Load homepage first to trigger cookie creation
+  console.log("🌐 Setting cookies via homepage...");
   await page.goto("https://www.myvue.com", { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(2000);
 
+  // Now hit API
+  console.log("📡 Calling API:", TARGET_URL);
   await page.goto(TARGET_URL, { waitUntil: "networkidle" });
 
   const body = await page.evaluate(() => document.body.innerText);
 
-  console.log("\n=== RAW RESPONSE ===\n", body);
+  console.log("\n=== RAW RESPONSE START ===");
+  console.log(body.substring(0, 500)); // preview first 500 chars
+  console.log("=== RAW RESPONSE END ===\n");
 
   try {
-    const data = JSON.parse(body);
-    console.log("\n🎉 PARSED JSON:\n", data);
+    const json = JSON.parse(body);
+    console.log("🎉 Parsed JSON:");
+    console.log(json);
   } catch {
-    console.log("\n❌ Could not parse JSON, Cloudflare may still be blocking.");
+    console.log("❌ JSON parse failed. Cloudflare may still be blocking.");
   }
 
   await browser.close();
