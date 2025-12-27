@@ -1,28 +1,35 @@
-name: Run Scraper
+name: Run Vue Bypass
 
 on:
-  workflow_dispatch:      # Manual run button
+  workflow_dispatch: # manual run
   schedule:
-    - cron: "0 */6 * * *"  # हर 6 घंटे में ऑटो-रन
+    - cron: "0 */6 * * *" # every 6 hours
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup Node
+      - name: Use Node 18
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      - name: Install deps
+      - name: Install Chromium dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libnss3 libatk1.0-0 libcups2 libxcomposite1 libxdamage1 \
+            libxrandr2 libgbm1 libasound2 libpangocairo-1.0-0 libgtk-3-0
+
+      - name: Install Node deps
         run: npm install
 
-      - name: Install browser
-        run: npx playwright install chromium
+      - name: Install Browser for Playwright
+        run: npm run install-browser
 
-      - name: Run script
+      - name: Run Scraper
         run: npm start
